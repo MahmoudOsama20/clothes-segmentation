@@ -1,0 +1,12 @@
+# Install PyTorch first for your CUDA version: https://pytorch.org/get-started/locally/
+torch
+torchvision
+segmentation-models-pytorch
+albumentations>=2.0
+opencv-python
+numpy
+pandas
+pyarrow
+pillow
+tqdm
+matplotlib
