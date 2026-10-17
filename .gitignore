@@ -10,3 +10,11 @@ data/*
 *.pth
 
 # keep result metrics/curves, ignore nothing else in results/
+results/exp1/*.png
+
+# personal photos & local sample outputs
+My photo.jpeg
+samples/output/*
+!samples/output/.gitkeep
+samples/input/*
+!samples/input/.gitkeep

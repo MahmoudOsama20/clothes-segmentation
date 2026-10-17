@@ -1,12 +1,12 @@
-# Clothes Segmentation (CVCY002)
+# Clothes Segmentation
 
 Deep-learning model that segments worn clothes from images of people (e.g. for virtual fitting rooms).
 A U-Net with a pretrained ResNet34 encoder is trained on the ATR human-parsing dataset (11 clothes-focused classes).
 
 | | mIoU | mDice | Pixel acc. |
 |---|---|---|---|
-| **Validation** (1,000 images) | **0.7685** | 0.8631 | 0.9816 |
-| Test (200 images) | 0.6135 (0.6748 over classes present) | 0.7068 | 0.9745 |
+| **Validation** (1,000 images) | **0.7652** | 0.8612 | 0.9811 |
+| Test (200 images) | 0.5775 (0.6352 over classes present) | 0.6673 | 0.9734 |
 
 Target performance (self-defined, the assignment does not give a number): validation mIoU >= 0.70, met.
 Inference speed: 9.2 ms per 512x512 image on a Tesla T4 (about 109 FPS), 24.4M parameters.
@@ -22,8 +22,6 @@ clothes-segmentation/
 ├── README.md
 ├── report.md                  # dataset, architecture, loss, metrics, limitations
 ├── requirements.txt
-├── notebooks/
-│   └── segmentation-clothes-kaggle.ipynb   # the executed Kaggle run that produced the reported numbers
 ├── src/
 │   ├── convert_parquet.py     # parquet -> images/ + masks/ folders
 │   ├── dataset.py             # class remapping, preprocessing, augmentation, loaders
@@ -53,7 +51,7 @@ pip install -r requirements.txt
 
 ## 2. Data
 
-Download the ATR dataset (parquet version from Hugging Face) into `data/ATRDataset/data/` so it contains
+Download the ATR dataset (parquet version from [Hugging Face](https://huggingface.co/datasets/mattmdjaga/human_parsing_dataset)) into `data/ATRDataset/data/` so it contains
 `train-*.parquet`, `validation-*.parquet` and `test-*.parquet`, then convert it:
 
 ```bash
@@ -111,18 +109,20 @@ clothes-only cutout and a side-by-side panel.
 
 ## Model weights
 
-`best.pt` is about 98 MB. To share it, shrink it first and attach it to a GitHub Release (or Git LFS):
+Pretrained FP16 weights (`model_fp16.pt`, ~49 MB) can be downloaded from the [GitHub Releases](https://github.com/MahmoudOsama20/clothes-segmentation/releases) and placed into `results/exp1/`.
 
+`infer.py` and `evaluate.py` load the fp16 file directly (`--ckpt results/exp1/model_fp16.pt`).
+
+To export the fp16 file from a full 98 MB checkpoint (`best.pt`):
 ```bash
 python src/export_weights.py --ckpt results/exp1/best.pt --out results/exp1/model_fp16.pt
 ```
 
-`infer.py` and `evaluate.py` load the fp16 file directly (`--ckpt results/exp1/model_fp16.pt`).
-
 ## Reproducing the results
 
-- **Exact numbers:** open `notebooks/segmentation-clothes-kaggle.ipynb` on Kaggle (GPU T4 x2, internet on, ATR dataset attached) and run all cells. It trains with DistributedDataParallel and writes the metrics and figures stored in `results/figures/`.
-- **With the scripts:** the pipeline above uses the same data processing, model, loss, optimizer and EMA. Expect small run-to-run differences because of different GPU count, seeds and non-deterministic kernels.
+The reported model was trained on Kaggle (2× Tesla T4, DistributedDataParallel) with the same data processing, model, loss, and optimizer, and `src/train.py` is the single-GPU equivalent (using gradient accumulation to match the effective batch size of 32):
+- Train locally: `python src/train.py --size 512 --bs 16 --accum 2 --epochs 25`
+- Evaluate: `python src/evaluate.py --out results/exp1`. Expect small run-to-run variations in validation mIoU and larger ones on the small 200-image test split due to hardware/kernel non-determinism.
 
 ## Known limitations (short version)
 
